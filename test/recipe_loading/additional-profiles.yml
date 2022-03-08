@@ -1,0 +1,5 @@
+---
+versions:
+  - 1
+additional_profiles_for_all_platform_combinations:
+  - weird-customisation

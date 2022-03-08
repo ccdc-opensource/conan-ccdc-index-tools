@@ -1,0 +1,5 @@
+---
+versions:
+  - 1
+require_override:
+  - expat/2.4.6@

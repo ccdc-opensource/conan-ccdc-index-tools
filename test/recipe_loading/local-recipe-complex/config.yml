@@ -1,0 +1,16 @@
+---
+versions:
+  "3.7.0.8":
+    folder: all
+macos_deployment_target: "10.13"
+additional_profiles_for_all_platform_combinations:
+  - povray-options
+build_types:
+  - Release
+platform_combinations:
+  - name: combi-1
+    build_profile: build-profile-1a
+    target_profile: target-profile-1a
+  - name: combi-2
+    build_profile: build-profile-2a
+    target_profile: target-profile-2a

@@ -1,0 +1,10 @@
+---
+versions:
+  - 1
+platform_combinations:
+  - name: combi-1
+    build_profile: build-profile-1a
+    target_profile: target-profile-1a
+  - name: combi-2
+    build_profile: build-profile-2a
+    target_profile: target-profile-2a

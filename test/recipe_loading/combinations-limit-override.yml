@@ -1,0 +1,12 @@
+---
+versions:
+  - 1
+platform_combinations:
+  - name: override-1
+    build_profile: build-profile-1a
+    target_profile: target-profile-1a
+  - name: override-2
+    build_profile: build-profile-2a
+    target_profile: target-profile-2a
+limit_to_platform_combinations:
+  - override-2

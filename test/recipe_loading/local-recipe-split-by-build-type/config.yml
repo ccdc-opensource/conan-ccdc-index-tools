@@ -1,0 +1,9 @@
+---
+versions:
+  "3.6.3":
+    folder: all
+build_types:
+  - Release
+  - Debug
+use_release_zlib_profile: true
+split_by_build_type: true

@@ -1,0 +1,6 @@
+---
+source_repository: public-conan-center
+versions:
+  - 10.12.1
+build_types:
+  - Release

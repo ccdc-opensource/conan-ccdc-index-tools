@@ -1,0 +1,4 @@
+---
+versions:
+  - 1
+macos_deployment_target: "10.15"

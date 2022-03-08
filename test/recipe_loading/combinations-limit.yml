@@ -1,0 +1,6 @@
+---
+versions:
+  - 1
+limit_to_platform_combinations:
+  - combi-2
+  - combi-3

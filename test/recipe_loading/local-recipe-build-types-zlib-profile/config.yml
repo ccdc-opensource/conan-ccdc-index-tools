@@ -1,0 +1,8 @@
+---
+versions:
+  "2.8.113":
+    folder: all
+build_types:
+  - Release
+  - Debug
+use_release_zlib_profile: true
