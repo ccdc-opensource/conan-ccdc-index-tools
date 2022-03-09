@@ -49,7 +49,7 @@ class PackageBuildDefinitions:
         centos_yum_preinstall: List,
         macos_brew_preinstall: List,
         require_override: List,
-        workaround_autotools_windows_debug_issue: bool,
+        force_single_cpu_core_for_debug_builds: bool,
         use_release_zlib_profile: bool,
         additional_profiles_for_all_platform_combinations: List,
         default_platform_combinations: List,
@@ -58,6 +58,8 @@ class PackageBuildDefinitions:
         needs_artifactory_api_key: bool,
         local_recipe_paths_by_version: Dict,
         split_by_build_type: bool,
+        conan_config_git_source: str,
+        conan_config_git_branch: str,
     ):
         self._name = name
         self._local_recipe = local_recipe
@@ -69,8 +71,8 @@ class PackageBuildDefinitions:
         self._centos_yum_preinstall = centos_yum_preinstall
         self._macos_brew_preinstall = macos_brew_preinstall
         self._require_override = require_override
-        self._workaround_autotools_windows_debug_issue = (
-            workaround_autotools_windows_debug_issue
+        self._force_single_cpu_core_for_debug_builds = (
+            force_single_cpu_core_for_debug_builds
         )
         self._use_release_zlib_profile = use_release_zlib_profile
         self._additional_profiles_for_all_platform_combinations = (
@@ -82,6 +84,8 @@ class PackageBuildDefinitions:
         self._needs_artifactory_api_key = needs_artifactory_api_key
         self._local_recipe_paths_by_version = local_recipe_paths_by_version
         self._split_by_build_type = split_by_build_type
+        self._conan_config_git_source = conan_config_git_source
+        self._conan_config_git_branch = conan_config_git_branch
 
     @property
     def name(self):
@@ -124,8 +128,8 @@ class PackageBuildDefinitions:
         return self._require_override
 
     @property
-    def workaround_autotools_windows_debug_issue(self):
-        return self._workaround_autotools_windows_debug_issue
+    def force_single_cpu_core_for_debug_builds(self):
+        return self._force_single_cpu_core_for_debug_builds
 
     @property
     def use_release_zlib_profile(self):
@@ -166,6 +170,14 @@ class PackageBuildDefinitions:
         else:
             return self.all_package_platform_combinations
 
+    @property
+    def conan_config_git_source(self):
+        return self._conan_config_git_source
+
+    @property
+    def conan_config_git_branch(self):
+        return self._conan_config_git_branch
+
     def recipe_path_for_version(self, v):
         if not self._local_recipe:
             return None
@@ -197,8 +209,8 @@ class PackageBuildDefinitions:
             _read_default_and_override("macos_brew_preinstall")
         )
         require_override = _listify(_read_default_and_override("require_override"))
-        workaround_autotools_windows_debug_issue = _read_default_and_override(
-            "workaround_autotools_windows_debug_issue"
+        force_single_cpu_core_for_debug_builds = _read_default_and_override(
+            "force_single_cpu_core_for_debug_builds"
         )
         use_release_zlib_profile = _read_default_and_override(
             "use_release_zlib_profile"
@@ -222,6 +234,9 @@ class PackageBuildDefinitions:
             "needs_artifactory_api_key"
         )
         split_by_build_type = _read_default_and_override("split_by_build_type")
+        conan_config_git_source = _read_default_and_override("conan_config_git_source")
+        conan_config_git_branch = _read_default_and_override("conan_config_git_branch")
+
 
         recipe = PackageBuildDefinitions(
             name=name,
@@ -234,7 +249,7 @@ class PackageBuildDefinitions:
             centos_yum_preinstall=centos_yum_preinstall,
             macos_brew_preinstall=macos_brew_preinstall,
             require_override=require_override,
-            workaround_autotools_windows_debug_issue=workaround_autotools_windows_debug_issue,
+            force_single_cpu_core_for_debug_builds=force_single_cpu_core_for_debug_builds,
             use_release_zlib_profile=use_release_zlib_profile,
             additional_profiles_for_all_platform_combinations=additional_profiles_for_all_platform_combinations,
             default_platform_combinations=default_platform_combinations,
@@ -243,6 +258,8 @@ class PackageBuildDefinitions:
             needs_artifactory_api_key=needs_artifactory_api_key,
             local_recipe_paths_by_version=None,
             split_by_build_type=split_by_build_type,
+            conan_config_git_source=conan_config_git_source,
+            conan_config_git_branch=conan_config_git_branch,
         )
         return recipe
 
@@ -272,8 +289,8 @@ class PackageBuildDefinitions:
             _read_default_and_override("macos_brew_preinstall")
         )
         require_override = _listify(_read_default_and_override("require_override"))
-        workaround_autotools_windows_debug_issue = _read_default_and_override(
-            "workaround_autotools_windows_debug_issue"
+        force_single_cpu_core_for_debug_builds = _read_default_and_override(
+            "force_single_cpu_core_for_debug_builds"
         )
         use_release_zlib_profile = _read_default_and_override(
             "use_release_zlib_profile"
@@ -302,6 +319,8 @@ class PackageBuildDefinitions:
             v: os.path.join(recipe_directory, r["versions"][v]["folder"])
             for v in versions
         }
+        conan_config_git_source = _read_default_and_override("conan_config_git_source")
+        conan_config_git_branch = _read_default_and_override("conan_config_git_branch")
 
         recipe = PackageBuildDefinitions(
             name=name,
@@ -314,7 +333,7 @@ class PackageBuildDefinitions:
             centos_yum_preinstall=centos_yum_preinstall,
             macos_brew_preinstall=macos_brew_preinstall,
             require_override=require_override,
-            workaround_autotools_windows_debug_issue=workaround_autotools_windows_debug_issue,
+            force_single_cpu_core_for_debug_builds=force_single_cpu_core_for_debug_builds,
             use_release_zlib_profile=use_release_zlib_profile,
             additional_profiles_for_all_platform_combinations=additional_profiles_for_all_platform_combinations,
             default_platform_combinations=default_platform_combinations,
@@ -323,5 +342,7 @@ class PackageBuildDefinitions:
             needs_artifactory_api_key=needs_artifactory_api_key,
             local_recipe_paths_by_version=local_recipe_paths_by_version,
             split_by_build_type=split_by_build_type,
+            conan_config_git_source=conan_config_git_source,
+            conan_config_git_branch=conan_config_git_branch,
         )
         return recipe

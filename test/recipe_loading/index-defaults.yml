@@ -37,7 +37,12 @@ limit_to_platform_combinations:
   - combi-2
   - combi-3
 
-workaround_autotools_windows_debug_issue: false
+conan_config_git_source: https://github.com/ccdc-opensource/conan-ccdc-common-configuration.git
+conan_config_git_branch: main
+
+# Sets CONAN_CPU_COUNT='1' in environment for debug builds
+# was called workaround_autotools_windows_debug_issue
+force_single_cpu_core_for_debug_builds: false
 
 additional_profiles_for_all_platform_combinations: []
 

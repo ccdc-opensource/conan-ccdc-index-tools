@@ -1,4 +1,0 @@
----
-versions:
-  - 3.14
-workaround_autotools_windows_debug_issue: true

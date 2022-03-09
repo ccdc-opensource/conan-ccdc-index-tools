@@ -1,0 +1,7 @@
+---
+source_repository: public-conan-center
+versions:
+  - 10.12.1
+header_only: true
+conan_config_git_source: https://github.com/ccdc-opensource/conan-alternative-configuration.git
+conan_config_git_branch: patch-1

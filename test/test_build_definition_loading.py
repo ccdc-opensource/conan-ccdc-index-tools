@@ -19,10 +19,15 @@ def test_read_recipe_mostly_defaults():
     assert len(definitions.centos_yum_preinstall) == 0
     assert len(definitions.macos_brew_preinstall) == 0
     assert len(definitions.require_override) == 0
-    assert not definitions.workaround_autotools_windows_debug_issue
+    assert not definitions.force_single_cpu_core_for_debug_builds
     assert not definitions.use_release_zlib_profile
     assert len(definitions.additional_profiles_for_all_platform_combinations) == 0
     assert not definitions.split_by_build_type
+    assert (
+        definitions.conan_config_git_source
+        == "https://github.com/ccdc-opensource/conan-ccdc-common-configuration.git"
+    )
+    assert definitions.conan_config_git_branch == "main"
 
 
 def test_read_recipe_header_only():
@@ -76,12 +81,12 @@ def test_read_recipe_require_override():
     assert definitions.require_override == ["expat/2.4.6@"]
 
 
-def test_read_recipe_workaround_autotools_windows_debug_issue():
+def test_read_recipe_force_single_cpu_core_for_debug_builds():
     definitions = PackageBuildDefinitions.from_yaml(
-        defaults, recipe_loading_dir, "workaround-autotools-windows-debug-issue.yml"
+        defaults, recipe_loading_dir, "force-single-core-for-debug-builds.yml"
     )
-    assert definitions.name == "workaround-autotools-windows-debug-issue"
-    assert definitions.workaround_autotools_windows_debug_issue
+    assert definitions.name == "force-single-core-for-debug-builds"
+    assert definitions.force_single_cpu_core_for_debug_builds
 
 
 def test_read_recipe_use_release_zlib_profile():
@@ -158,6 +163,18 @@ def test_read_recipe_override_limit_combinations():
     assert definitions.package_platform_combinations[0].name == "override-2"
 
 
+def test_read_recipe_override_git_config():
+    definitions = PackageBuildDefinitions.from_yaml(
+        defaults, recipe_loading_dir, "git-config.yml"
+    )
+    assert definitions.name == "git-config"
+    assert (
+        definitions.conan_config_git_source
+        == "https://github.com/ccdc-opensource/conan-alternative-configuration.git"
+    )
+    assert definitions.conan_config_git_branch == "patch-1"
+
+
 def test_read_local_recipe_one_version():
     definitions = PackageBuildDefinitions.from_local_recipe_directory(
         defaults, os.path.join(recipe_loading_dir, "local-recipe-one-version")
@@ -173,7 +190,7 @@ def test_read_local_recipe_one_version():
     assert len(definitions.centos_yum_preinstall) == 0
     assert len(definitions.macos_brew_preinstall) == 0
     assert len(definitions.require_override) == 0
-    assert not definitions.workaround_autotools_windows_debug_issue
+    assert not definitions.force_single_cpu_core_for_debug_builds
     assert not definitions.use_release_zlib_profile
     assert len(definitions.additional_profiles_for_all_platform_combinations) == 0
     assert not definitions.split_by_build_type

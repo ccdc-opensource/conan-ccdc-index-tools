@@ -6,57 +6,108 @@ Python tools and scripts for dealing with conan-ccdc-index
 
 Create a venv then, in the venv
 
-`python -m pip install -U pip setuptools`
-`python -m pip install -e .`
-`python -m pip install -e '.[testing]'`
+```
+python -m pip install -U pip setuptools
+python -m pip install -e .
+python -m pip install -e '.[testing]'
+```
 
-## Ideas
+## Ideas for the command line
 
-List all package names
-`cit list`
+### List all package names
 
-Build a single version of package foo in a single platform configuration and type
-`cit pkgbuild --build-type Release --platform-configuration native-centos7-gcc10-x86_64 foo 1.2.3`
+`cit list packages`
 
-Build all versions of package foo in a single platform configuration and type
-`cit pkgbuild --build-type Release --platform-configuration native-centos7-gcc10-x86_64 foo`
+Returns a list of package names
 
-Build all versions of foo in a single platform configuration in all specified types (Release, Debug etc)
-`cit pkgbuild --build-type Release --platform-configuration native-centos7-gcc10-x86_64 foo`
+### List all package licences
 
-Increase logging level
-`cit pkgbuild --build-type Release --platform-configuration native-centos7-gcc10-x86_64 --conan-logging-level foo`
+`cit list licences`
 
-Publish recipes for all versions of foo
+Returns a dictionary of package names and relative licence obtained from the conanfile.py
+
+
+### Build a single version of package foo in a single platform configuration and type
+
+`cit build --build-type Release --platform-configuration native-centos7-gcc10-x86_64 foo 1.2.3`
+
+Uses a published recipe (see cit publish recipe examples below)
+
+### Build all versions of package foo in a single platform configuration and type
+
+`cit build --build-type Release --platform-configuration native-centos7-gcc10-x86_64 foo`
+
+
+### Build all versions of foo in a single platform configuration in all specified types (Release, Debug etc)
+
+`cit build --build-type Release --platform-configuration native-centos7-gcc10-x86_64 foo`
+
+### Increase logging level
+
+`cit build --build-type Release --platform-configuration native-centos7-gcc10-x86_64 --conan-logging-level debug foo`
+
+Valid values are "critical", "error", "warning", "warn", "info", "debug"
+
+### Use local directory for configuration install
+
+`cit build --build-type Release --platform-configuration native-centos7-gcc10-x86_64 --configuration-local-directory ../conan-ccdc-common-configuration foo`
+
+Useful when making profile changes, an alternative to creating a branch in the configuration repository and pointing at it via alternative branches
+
+### Publish recipes for all versions of foo in the local conan home
+
+`cit publish recipe foo`
+
+Unlike the version using --destination-repository, this merely publishes the recipes locally
+
+### Publish recipes for all versions of foo
+
 `cit publish recipe --destination-repository pr-repo-1234 foo`
 
+Publishes a recipe to a remote repository
 
-    parser.add_argument('--destination-repository',
-                        help='where the build goes', default='ccdc-3rdparty-conan')
-    parser.add_argument('--macos-brew-preinstall',
-                        help='install brew packages', action='append')
-    parser.add_argument('--centos-yum-preinstall',
-                        help='install yum packages', action='append')
-    parser.add_argument('--macos-deployment-target',
-                        help='minimum supported macos version', default='10.13')
-    parser.add_argument('--macos-xcode-version',
-                        help='xcode version')
-    parser.add_argument('--windows-bash-path',
-                        help='workaround for recipes needing specific path to bash')
-    parser.add_argument('--conan-logging-level', help='', default='info')
-    parser.add_argument(
-        '--workaround-autotools-windows-debug-issue', help='', action='store_true')
-    parser.add_argument('--use-release-zlib-profile',
-                        help='', action='store_true')
-    parser.add_argument('--additional-profiles-for-all-platforms',
-                        help='Use additional profiles', action='append')
-    parser.add_argument(
-        '--local-recipe', help='directory that contains conanfile.py')
-    parser.add_argument(
-        '--really-upload', help='really upload to artifactory', action='store_true')
-    parser.add_argument('--require-override',
-                        help='override requirements for specific package', action='append')
-    parser.add_argument('--configuration-branch',
-                        help='Branch of ccdc-opensource/conan-ccdc-common-configuration to use', default='main')
-    parser.add_argument('--configuration-local-directory',
-                        help='checkout of ccdc-opensource/conan-ccdc-common-configuration to use')
+### Publish built package for a single version of foo
+
+`cit publish package --destination-repository pr-repo-1234 --build-type Release --platform-configuration native-centos7-gcc10-x86_64 foo 1.2.3`
+
+### Publish built package for all versions of foo in the index
+
+`cit publish package --destination-repository pr-repo-1234 --build-type Release --platform-configuration native-centos7-gcc10-x86_64 foo`
+
+### Github PR validation
+
+`cit pr validate`
+
+- Checks that a single recipe has been altered
+- potentially runs hooks on local recipes
+
+### Github PR prepare
+
+`cit pr prepare`
+
+- Sets up a new conan repository for the pull request where built recipes and artefacts are stored
+
+### Github PR create build matrix
+
+`cit pr matrix foo`
+
+Prints a JSON encoded matrix of GitHub jobs required to build all versions
+
+### Github PR build
+
+`cit pr build --matrix '{}' foo`
+
+Builds a single matrix line
+
+### Github PR merge
+
+`cit pr merge foo`
+
+Copies created artefacts to target repository. Marks conan repository as closed
+
+### Github PR close
+
+`cit pr close foo`
+
+Marks conan repository as closed
+

@@ -1,0 +1,4 @@
+---
+versions:
+  - 3.14
+force_single_cpu_core_for_debug_builds: true
