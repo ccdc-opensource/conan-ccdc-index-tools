@@ -6,26 +6,36 @@ Python tools and scripts for dealing with conan-ccdc-index
 
 Create a venv then, in the venv
 
-```
+```shell
 python -m pip install -U pip setuptools
 python -m pip install -e .
-python -m pip install -e '.[testing]'
 ```
+
+This will make the cit command available in the current virtualenv
+
+Additionally running `python -m pip install -e '.[testing]'` will add some development packages 
 
 ## Ideas for the command line
 
+Note: These are not implemented yet!
+
 ### List all package names
 
-`cit list packages`
+`cit info package`
 
 Returns a list of package names
 
 ### List all package licences
 
-`cit list licences`
+`cit info licence`
 
 Returns a dictionary of package names and relative licence obtained from the conanfile.py
 
+### Get licence of a specific package
+
+`cit info licence foo`
+
+Returns a dictionary of package names and relative licence obtained from the conanfile.py
 
 ### Build a single version of package foo in a single platform configuration and type
 
@@ -40,7 +50,7 @@ Uses a published recipe (see cit publish recipe examples below)
 
 ### Build all versions of foo in a single platform configuration in all specified types (Release, Debug etc)
 
-`cit build --build-type Release --platform-configuration native-centos7-gcc10-x86_64 foo`
+`cit build --platform-configuration native-centos7-gcc10-x86_64 foo`
 
 ### Increase logging level
 
@@ -111,3 +121,42 @@ Copies created artefacts to target repository. Marks conan repository as closed
 
 Marks conan repository as closed
 
+
+## What does the PR workflow look like?
+
+```mermaid
+sequenceDiagram
+    participant Developer
+    participant Cron
+    participant conan.ccdc.index
+    participant conan.ccdc.index.ci
+    participant First GitHub Job
+    participant Multiple GitHub Jobs
+    participant temporary.artifactory.ccdc
+    participant PR Closure GitHub Job
+    participant artifactory.ccdc
+
+    Developer->>conan.ccdc.index: Create PR 123 with a change<br/>to package foo
+    conan.ccdc.index->>conan.ccdc.index.ci: use action
+    conan.ccdc.index.ci->>First GitHub Job: install conan-ccdc-index-tools
+    conan.ccdc.index.ci->>First GitHub Job: cci pr validate
+    Note right of First GitHub Job: Checks that a single recipe has been altered<br/>runs hooks on local recipes
+    conan.ccdc.index.ci->>First GitHub Job: cci pr prepare
+    First GitHub Job->>temporary.artifactory.ccdc: create temporary conan repository<br/>conan-ci-pr-123
+    First GitHub Job->>temporary.artifactory.ccdc: publish changed recipe
+    conan.ccdc.index.ci->>First GitHub Job: cci pr matrix foo
+    conan.ccdc.index.ci->>Multiple GitHub Jobs: cci pr build --matrix foo
+    Multiple GitHub Jobs->>temporary.artifactory.ccdc: Use conan-ci-pr-123<br/>(high precedence)
+    Note right of Multiple GitHub Jobs: Builds package for a<br/>single platform combination
+    Multiple GitHub Jobs->>temporary.artifactory.ccdc: Publish package in conan-ci-pr-123
+    Developer->>temporary.artifactory.ccdc: Validate manually (use contents of repo)
+    Developer->>conan.ccdc.index: Accept and merge PR 123
+    conan.ccdc.index->>conan.ccdc.index.ci: use action
+    conan.ccdc.index.ci->>PR Closure GitHub Job: install conan-ccdc-index-tools
+    conan.ccdc.index.ci->>PR Closure GitHub Job: cit pr merge foo
+    PR Closure GitHub Job-->>temporary.artifactory.ccdc: get recipe and binaries
+    PR Closure GitHub Job->>artifactory.ccdc: publish recipe and binaries
+    PR Closure GitHub Job-->>temporary.artifactory.ccdc: mark for closure
+    Cron->>temporary.artifactory.ccdc: delete conan-ci-pr-123
+    
+```
