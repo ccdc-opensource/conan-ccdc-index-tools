@@ -1,4 +1,5 @@
 import os
+import click
 from typing import Dict, List
 from .build_definition import PackageBuildDefinitions
 
@@ -47,9 +48,13 @@ class PackageIndex:
         yml_file = os.path.join(self.recipes_directory, f"{pkg}.yml")
         local_config_yml_file = os.path.join(self.recipes_directory, pkg, "config.yml")
         if os.path.isfile(yml_file):
-            return PackageBuildDefinitions.from_yaml(
-                self.defaults_file, self.recipes_directory, f"{pkg}.yml"
-            )
+            try:
+                return PackageBuildDefinitions.from_yaml(
+                    self.defaults_file, self.recipes_directory, f"{pkg}.yml"
+                )
+            except Exception as e:
+                click.echo(e, err=True)
+                raise Exception(f"Cannot read package definition in {yml_file}")
         if os.path.isfile(local_config_yml_file):
             return PackageBuildDefinitions.from_local_recipe_directory(
                 self.defaults_file, os.path.join(self.recipes_directory, pkg)

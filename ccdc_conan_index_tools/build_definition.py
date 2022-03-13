@@ -237,7 +237,6 @@ class PackageBuildDefinitions:
         conan_config_git_source = _read_default_and_override("conan_config_git_source")
         conan_config_git_branch = _read_default_and_override("conan_config_git_branch")
 
-
         recipe = PackageBuildDefinitions(
             name=name,
             local_recipe=False,
@@ -272,7 +271,7 @@ class PackageBuildDefinitions:
 
         with open(os.path.join(recipe_defaults), "r") as f:
             d = yaml.safe_load(f)
-        with open(os.path.join(recipe_directory, config_yaml_file), "r") as f:
+        with open(config_yaml_file, "r") as f:
             r = yaml.safe_load(f)
 
         def _read_default_and_override(field, default=None):

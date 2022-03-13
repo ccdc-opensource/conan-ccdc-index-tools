@@ -1,41 +1,30 @@
+from dataclasses import dataclass
+from pathlib import Path
 import click
-import os
-import yaml
-import json
+from .commands.info import info
+from .commands.build import build
 
-default_index = os.environ.get("CCDC_CONAN_INDEX", None)
+
+@dataclass
+class CliContext(object):
+    index: click.Path
 
 
 @click.group()
-@click.option("--index", envvar="CCDC_CONAN_INDEX", help="Index folder", default=".")
-@click.pass_context
-def cli(ctx, index):
-    ctx.obj = dict()
-    ctx.obj["index"] = index
-    pass
-
-
-@cli.command()
 @click.option(
-    "--format",
-    type=click.Choice(["yaml", "json"], case_sensitive=False),
-    default="yaml",
+    "--index",
+    envvar="LOCAL_CONAN_INDEX",
+    help="Index folder",
+    default=".",
+    type=click.Path(),
 )
 @click.pass_context
-def list(ctx, format):
-    from ccdc_conan_index_tools.package_index import PackageIndex
+def cli(ctx, index):
+    ctx.obj = CliContext(index=index)
 
-    index = ctx.obj["index"]
 
-    try:
-        packages = PackageIndex(index).package_names
-        if format == "yaml":
-            click.echo(yaml.dump(packages))
-        elif format == json:
-            click.echo(json.dumps(packages))
-    except FileNotFoundError as e:
-        raise click.UsageError(f"Cannot find a valid package index in {index}: {e}")
-
+cli.add_command(info)
+cli.add_command(build)
 
 if __name__ == "__main__":
     cli()
