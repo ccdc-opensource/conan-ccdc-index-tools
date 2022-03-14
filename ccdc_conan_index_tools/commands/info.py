@@ -19,15 +19,11 @@ def package(ctx, format):
     from ccdc_conan_index_tools.package_index import PackageIndex
 
     index = ctx.obj.index
-
-    try:
-        packages = PackageIndex(index).package_names
-        if format == "yaml":
-            click.echo(yaml.dump(packages))
-        elif format == "json":
-            click.echo(json.dumps(packages))
-    except FileNotFoundError as e:
-        raise click.UsageError(f"Cannot find a valid package index in {index}: {e}")
+    packages = index.package_names
+    if format == "yaml":
+        click.echo(yaml.dump(packages))
+    elif format == "json":
+        click.echo(json.dumps(packages))
 
 
 @info.command()
@@ -39,16 +35,12 @@ def package(ctx, format):
 @click.argument("package-name", required=False)
 @click.pass_context
 def licence(ctx, format, package_name):
-    from ccdc_conan_index_tools.package_index import PackageIndex
     from ccdc_conan_index_tools.conan_commands import (
         get_remote_package_licence,
         get_local_package_licence,
     )
 
-    try:
-        index = PackageIndex(ctx.obj.index)
-    except FileNotFoundError as e:
-        raise click.UsageError(f"Cannot find a valid package index in {index}: {e}")
+    index = ctx.obj.index
     licences = {}
     package_names = index.package_names
     if package_name and package_name not in package_names:
@@ -60,7 +52,9 @@ def licence(ctx, format, package_name):
         if definitions.local_recipe:
             for version in definitions.versions:
                 licence = get_local_package_licence(
-                    conanfile_directory=definitions.recipe_path_for_version(version)
+                    conanfile_directory=definitions.recipe_path_for_version(version),
+                    conan_user_home=ctx.obj.conan_user_home,
+                    conan_logging_level=ctx.obj.conan_logging_level,
                 )
                 licences[f"{package}/{version}"] = licence
         else:
@@ -69,6 +63,8 @@ def licence(ctx, format, package_name):
                     package=package,
                     version=version,
                     remote=definitions.source_repository,
+                    conan_user_home=ctx.obj.conan_user_home,
+                    conan_logging_level=ctx.obj.conan_logging_level,
                 )
                 licences[f"{package}/{version}"] = licence
 

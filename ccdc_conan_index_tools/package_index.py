@@ -8,6 +8,8 @@ class PackageIndex:
     def __init__(self, index_dir):
         self._index_dir = index_dir
         self._names = None
+        if not os.path.isdir(self.recipes_directory):
+            raise FileNotFoundError(f"Missing {self.recipes_directory}")
 
     @property
     def is_valid(self):

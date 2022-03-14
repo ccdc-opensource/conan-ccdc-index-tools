@@ -37,30 +37,30 @@ Returns a dictionary of package names and relative licence obtained from the con
 
 Returns a dictionary of package names and relative licence obtained from the conanfile.py
 
-### Build a single version of package foo in a single platform configuration and type
+### Build a single version of package foo in a single platform combination and type
 
-`cit build --build-type Release --platform-configuration native-centos7-gcc10-x86_64 foo 1.2.3`
+`cit build --build-type Release --platform-combination native-centos7-gcc10-x86_64 foo 1.2.3`
 
 Uses a published recipe (see cit publish recipe examples below)
 
-### Build all versions of package foo in a single platform configuration and type
+### Build all versions of package foo in a single platform combination and type
 
-`cit build --build-type Release --platform-configuration native-centos7-gcc10-x86_64 foo`
+`cit build --build-type Release --platform-combination native-centos7-gcc10-x86_64 foo`
 
 
-### Build all versions of foo in a single platform configuration in all specified types (Release, Debug etc)
+### Build all versions of foo in a single platform combination in all specified types (Release, Debug etc)
 
-`cit build --platform-configuration native-centos7-gcc10-x86_64 foo`
+`cit build --platform-combination native-centos7-gcc10-x86_64 foo`
 
 ### Increase logging level
 
-`cit build --build-type Release --platform-configuration native-centos7-gcc10-x86_64 --conan-logging-level debug foo`
+`cit --conan-logging-level debug build --build-type Release --platform-combination native-centos7-gcc10-x86_64 foo`
 
 Valid values are "critical", "error", "warning", "warn", "info", "debug"
 
-### Use local directory for configuration install
+### Use local directory for combination install
 
-`cit build --build-type Release --platform-configuration native-centos7-gcc10-x86_64 --configuration-local-directory ../conan-ccdc-common-configuration foo`
+`cit build --build-type Release --platform-combination native-centos7-gcc10-x86_64 --configuration-local-directory ../conan-ccdc-common-configuration foo`
 
 Useful when making profile changes, an alternative to creating a branch in the configuration repository and pointing at it via alternative branches
 
@@ -78,7 +78,7 @@ Publishes a recipe to a remote repository
 
 ### Publish built package for a single version of foo
 
-`cit publish package --destination-repository pr-repo-1234 --build-type Release --platform-configuration native-centos7-gcc10-x86_64 foo 1.2.3`
+`cit publish package --destination-repository pr-repo-1234 --build-type Release --platform-combination native-centos7-gcc10-x86_64 foo 1.2.3`
 
 ### Publish built package for all versions of foo in the index
 

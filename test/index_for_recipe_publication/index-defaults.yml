@@ -8,8 +8,6 @@ header_only: false
 # All build types
 build_types:
   - Release
-  - Debug
-  - RelWithDebInfo
 
 # Deployment target override, setting this will set the relevant environment variables regardless of what the conan recipe says
 # macos_deployment_target:
