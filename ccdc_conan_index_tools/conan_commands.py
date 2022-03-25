@@ -23,10 +23,10 @@ def get_conan_output(
     conan_password=None,
 ):
     env = dict(os.environ)
-    env |= {
+    env.update({
         "NO_COLOR": "1",
         "CONAN_NON_INTERACTIVE": "1",
-    }
+    })
     if conan_user_home:
         env["CONAN_USER_HOME"] = conan_user_home
     if conan_logging_level:
