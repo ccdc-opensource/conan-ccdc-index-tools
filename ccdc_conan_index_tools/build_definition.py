@@ -15,12 +15,20 @@ class PlatformCombination:
         self._name = yaml_dict["name"]
         self._build_profile = yaml_dict["build_profile"]
         self._target_profile = yaml_dict["target_profile"]
+        self._uses_yum = yaml_dict.get("uses_yum", False)
+        self._uses_brew = yaml_dict.get("uses_brew", False)
+        self._macos_xcode_version = yaml_dict.get("macos_xcode_version")
+        self._macos_deployment_target = yaml_dict.get("macos_deployment_target")
 
     def __eq__(self, other):
         return (
             self._name == other._name
             and self._build_profile == other._build_profile
             and self._target_profile == other._target_profile
+            and self._uses_yum == other._uses_yum
+            and self._uses_brew == other._uses_brew
+            and self._macos_xcode_version == other._macos_xcode_version
+            and self._macos_deployment_target == other._macos_deployment_target
         )
 
     @property
@@ -34,6 +42,22 @@ class PlatformCombination:
     @property
     def target_profile(self):
         return self._target_profile
+
+    @property
+    def uses_yum(self):
+        return self._uses_yum
+
+    @property
+    def uses_brew(self):
+        return self._uses_brew
+
+    @property
+    def macos_xcode_version(self):
+        return self._macos_xcode_version
+
+    @property
+    def macos_deployment_target(self):
+        return self._macos_deployment_target
 
 
 class PackageBuildDefinitions:
@@ -177,6 +201,12 @@ class PackageBuildDefinitions:
     @property
     def conan_config_git_branch(self):
         return self._conan_config_git_branch
+
+    def platform_combination_by_name(self, name):
+        for c in self.all_package_platform_combinations:
+            if c.name == name:
+                return c
+        return None
 
     def recipe_path_for_version(self, v):
         if not self._local_recipe:

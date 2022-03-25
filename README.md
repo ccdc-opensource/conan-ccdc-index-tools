@@ -13,11 +13,9 @@ python -m pip install -e .
 
 This will make the cit command available in the current virtualenv
 
-Additionally running `python -m pip install -e '.[testing]'` will add some development packages 
+Additionally running `python -m pip install -e '.[testing]'` will add some development packages.
 
-## Ideas for the command line
-
-Note: These are not implemented yet!
+Some command line arguments understood by the tools are documented below.
 
 ### List all package names
 
@@ -35,7 +33,21 @@ Returns a dictionary of package names and relative licence obtained from the con
 
 `cit info licence foo`
 
-Returns a dictionary of package names and relative licence obtained from the conanfile.py
+### Publish recipes for all versions of foo in the local conan home
+
+`cit publish recipe foo`
+
+Unlike the version using --destination-repository, this merely publishes the recipes locally
+
+### Publish recipes for all versions of all known packages in the local conan home
+
+`cit publish recipe`
+
+Unlike the version using --destination-repository, this merely publishes the recipes locally
+
+## Ideas for the command line
+
+Note: These are not implemented yet!
 
 ### Build a single version of package foo in a single platform combination and type
 
@@ -64,15 +76,10 @@ Valid values are "critical", "error", "warning", "warn", "info", "debug"
 
 Useful when making profile changes, an alternative to creating a branch in the configuration repository and pointing at it via alternative branches
 
-### Publish recipes for all versions of foo in the local conan home
-
-`cit publish recipe foo`
-
-Unlike the version using --destination-repository, this merely publishes the recipes locally
 
 ### Publish recipes for all versions of foo
 
-`cit publish recipe --destination-repository pr-repo-1234 foo`
+`cit publish recipe --destination-repository pr-repo-123 foo`
 
 Publishes a recipe to a remote repository
 
@@ -121,7 +128,13 @@ Copies created artefacts to target repository. Marks conan repository as closed
 
 Marks conan repository as closed
 
+## Running an artifactory CE C++ edition
 
+```docker run --name artifactory -d -p 8081:8081 -p 8082:8082 docker.bintray.io/jfrog/artifactory-cpp-ce:latest```
+
+on M1 mac, you must download the "Darwin installer", a tar.gz, extract it and run `arch -arch x86_64 bin/artifactory.sh` to make it work
+
+Use admin Foobar123
 ## What does the PR workflow look like?
 
 ```mermaid

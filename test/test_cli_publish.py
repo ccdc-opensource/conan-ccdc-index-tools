@@ -77,3 +77,19 @@ def test_cli_publish_all_recipes():
         print(search_output)
         assert "local-recipe" in search_output
         assert "7zip/19.00" in search_output
+
+
+def test_cli_publish_local_recipe_remote_repo():
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory(prefix="cit") as ch:
+        result = runner.invoke(
+            recipe,
+            ["local-recipe", "--destination-repository", "pr-repo-something"],
+            obj=CliContext(
+                index=index_for_recipe_publication,
+                conan_user_home=ch,
+                conan_logging_level=None,
+            ),
+        )
+        assert result.exit_code == 0
+        assert result.output == "Publishing local recipe local-recipe/1.75.0@\n"

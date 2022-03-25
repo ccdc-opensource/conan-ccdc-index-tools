@@ -1,6 +1,7 @@
 import subprocess
 import shutil
-from .build_definition import PackageBuildDefinitions
+import os
+from .build_definition import PackageBuildDefinitions, PlatformCombination
 
 
 class ConanCommandException(Exception):
@@ -12,8 +13,17 @@ def conan_command():
     return shutil.which("conan")
 
 
-def get_conan_output(command_args, conan_user_home=None, conan_logging_level=None):
-    env = {
+def get_conan_output(
+    command_args,
+    conan_user_home=None,
+    conan_logging_level=None,
+    macos_deployment_target=None,
+    force_single_cpu_core=False,
+    conan_username=None,
+    conan_password=None,
+):
+    env = dict(os.environ)
+    env |= {
         "NO_COLOR": "1",
         "CONAN_NON_INTERACTIVE": "1",
     }
@@ -21,6 +31,14 @@ def get_conan_output(command_args, conan_user_home=None, conan_logging_level=Non
         env["CONAN_USER_HOME"] = conan_user_home
     if conan_logging_level:
         env["CONAN_LOGGING_LEVEL"] = conan_logging_level
+    if macos_deployment_target:
+        env["MACOSX_DEPLOYMENT_TARGET"] = macos_deployment_target
+    if force_single_cpu_core:
+        env["CONAN_CPU_COUNT"] = "1"
+    if conan_username:
+        env["CONAN_LOGIN_USERNAME"] = conan_username
+    if conan_password:
+        env["CONAN_PASSWORD"] = conan_password
 
     ret = subprocess.run(
         args=[conan_command()] + command_args,
@@ -70,24 +88,38 @@ def publish_local_recipe(
     conanfile_directory,
     package_name,
     package_version,
+    destination_repository=None,
     conan_user_home=None,
     conan_logging_level=None,
 ):
-    return get_conan_output(
+    output = get_conan_output(
         ["export", conanfile_directory, f"{package_name}/{package_version}@"],
         conan_user_home=conan_user_home,
         conan_logging_level=conan_logging_level,
     )
+    if destination_repository:
+        output += "\n"
+        output += get_conan_output(
+            [
+                "upload",
+                f"{package_name}/{package_version}@",
+                f"--remote={ destination_repository }",
+                "--confirm",
+            ],
+            conan_user_home=conan_user_home,
+            conan_logging_level=conan_logging_level,
+        )
 
 
 def publish_remote_recipe(
     package_name,
     package_version,
     source_repository,
+    destination_repository=None,
     conan_user_home=None,
     conan_logging_level=None,
 ):
-    return get_conan_output(
+    output = get_conan_output(
         [
             "download",
             f"{package_name}/{package_version}@",
@@ -97,6 +129,18 @@ def publish_remote_recipe(
         conan_user_home=conan_user_home,
         conan_logging_level=conan_logging_level,
     )
+    if destination_repository:
+        output += "\n"
+        output += get_conan_output(
+            [
+                "upload",
+                f"{package_name}/{package_version}@",
+                f"--remote={ destination_repository }",
+                "--confirm",
+            ],
+            conan_user_home=conan_user_home,
+            conan_logging_level=conan_logging_level,
+        )
 
 
 def build_all_locally(
@@ -107,6 +151,33 @@ def build_all_locally(
 ):
     for version in versions:
         for platform_combination in platform_combinations:
+            # Pre-add any required packages
+            if platform_combination.uses_yum and definitions.centos_yum_preinstall:
+                all_yum = " ".join(definitions.centos_yum_preinstall)
+                print(f"Installing {all_yum} with yum")
+                subprocess.check_call(
+                    ["sudo", "yum", "install", "-y"] + definitions.centos_yum_preinstall
+                )
+
+            if platform_combination.uses_brew:
+                if definitions.macos_brew_preinstall:
+                    all_brew = " ".join(definitions.macos_brew_preinstall)
+                    print(f"Installing {all_brew} with brew")
+                    subprocess.check_call(
+                        ["brew", "install"] + definitions.macos_brew_preinstall
+                    )
+                if platform_combination.macos_xcode_version:
+                    print(
+                        f"sudo xcode-select -s /Applications/Xcode_{ platform_combination.macos_xcode_version }.app/Contents/Developer"
+                    )
+                    subprocess.check_call(
+                        [
+                            "sudo",
+                            "xcode-select",
+                            "-s",
+                            f"/Applications/Xcode_{ platform_combination.macos_xcode_version }.app/Contents/Developer",
+                        ]
+                    )
             for build_type in build_types:
                 build_locally(
                     definitions=definitions,
@@ -120,6 +191,73 @@ def build_locally(
     definitions: PackageBuildDefinitions,
     version: str,
     build_type: str,
-    combination: str,
+    combination: PlatformCombination,
 ):
-    pass
+    build_profile = combination.build_profile
+    if build_type == "Debug":
+        target_profile = combination.target_profile + "-debug"
+    else:
+        target_profile = combination.target_profile + "-release"
+
+    conan_install_args = [
+        "install",
+        f"{definitions.name}/{version}@",
+        "--profile:build",
+        build_profile,
+        "--profile:host",
+        target_profile,
+    ]
+
+    additional_profiles = []
+    additional_profiles.extend(
+        definitions.additional_profiles_for_all_platform_combinations
+    )
+    if definitions.use_release_zlib_profile:
+        if "msvc16" in target_profile:
+            additional_profiles.append("windows-msvc16-release-zlib")
+    for additional_profile in additional_profiles:
+        conan_install_args += ["--profile", additional_profile]
+
+    conan_install_args += [
+        # f"--remote={ definitions.source_repository }",
+        f"--build={ definitions.name }",
+        "-s",
+        f"build_type={ build_type }",
+    ]
+
+    for override in definitions.require_override:
+        conan_install_args += ["--require-override", override]
+
+    get_conan_output(
+        conan_install_args,
+        conan_user_home=None,
+        conan_logging_level=None,
+        macos_deployment_target=combination.macos_deployment_target,
+        force_single_cpu_core=definitions.force_single_cpu_core_for_debug_builds,
+    )
+
+    if definitions.local_recipe:
+        conan_test_args = [
+            "test",
+            f"{definitions.recipe_path_for_version(version)}/test_package",
+            f"{definitions.name}/{version}@",
+            "--profile:build",
+            build_profile,
+            "--profile:host",
+            target_profile,
+        ]
+        for additional_profile in additional_profiles:
+            conan_test_args += ["--profile", additional_profile]
+        for override in definitions.require_override:
+            conan_install_args += ["--require-override", override]
+        conan_test_args += [
+            "-s",
+            f"build_type={ build_type }",
+        ]
+        get_conan_output(
+            conan_test_args,
+            conan_user_home=None,
+            conan_logging_level=None,
+            macos_deployment_target=combination.macos_deployment_target,
+            force_single_cpu_core=definitions.force_single_cpu_core_for_debug_builds,
+        )

@@ -39,7 +39,7 @@ def build(ctx, build_type, platform_combination, package_name, package_version):
         ]
         if not platform_combinations:
             raise click.UsageError(
-                f"Cannot find build type {build_type} for {package_name} in {index}"
+                f"Cannot find any valid platform combinations for {package_name} in {index}"
             )
     else:
         platform_combinations = definitions.package_platform_combinations

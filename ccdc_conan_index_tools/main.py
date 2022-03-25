@@ -1,10 +1,18 @@
 from dataclasses import dataclass
 from pathlib import Path
 import click
-from .commands.info import info
-from .commands.build import build
-from .commands.publish import publish
-from .package_index import PackageIndex
+from ccdc_conan_index_tools.commands.info import info
+from ccdc_conan_index_tools.commands.build import build
+from ccdc_conan_index_tools.commands.publish import publish
+from ccdc_conan_index_tools.package_index import PackageIndex
+
+# if 'CCDC_USERNAME' in os.environ:
+#     artifactory_user = os.environ['CCDC_USERNAME']
+# elif 'USER' in os.environ:
+#     artifactory_user = os.environ['USER']
+# elif 'USERNAME' in os.environ:
+#     artifactory_user = os.environ['USERNAME']
+# artifactory_api_key = os.environ["ARTIFACTORY_API_KEY"]
 
 
 @dataclass

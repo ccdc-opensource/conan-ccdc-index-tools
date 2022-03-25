@@ -28,6 +28,7 @@ def recipe(ctx, destination_repository, package_name, package_version):
                     definitions.recipe_path_for_version(version),
                     package_name,
                     version,
+                    destination_repository=destination_repository,
                     conan_logging_level=ctx.obj.conan_logging_level,
                     conan_user_home=ctx.obj.conan_user_home,
                 )
@@ -39,6 +40,7 @@ def recipe(ctx, destination_repository, package_name, package_version):
                     package_name,
                     version,
                     definitions.source_repository,
+                    destination_repository=destination_repository,
                     conan_logging_level=ctx.obj.conan_logging_level,
                     conan_user_home=ctx.obj.conan_user_home,
                 )
