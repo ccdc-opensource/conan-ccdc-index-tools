@@ -2,7 +2,7 @@ import subprocess
 import shutil
 import os
 from .build_definition import PackageBuildDefinitions, PlatformCombination
-
+from click import echo
 
 class ConanCommandException(Exception):
     def __init__(self, *args: object) -> None:
@@ -228,6 +228,7 @@ def build_locally(
     for override in definitions.require_override:
         conan_install_args += ["--require-override", override]
 
+    echo(f"Installing {definitions.name}/{version}@ in configuration {build_type}, combination {combination.name}")
     get_conan_output(
         conan_install_args,
         conan_user_home=None,
@@ -237,6 +238,7 @@ def build_locally(
     )
 
     if definitions.local_recipe:
+        echo(f"Testing {definitions.name}/{version}@ in configuration {build_type}, combination {combination.name}")
         conan_test_args = [
             "test",
             f"{definitions.recipe_path_for_version(version)}/test_package",
