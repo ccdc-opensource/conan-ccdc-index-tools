@@ -250,8 +250,6 @@ def build_locally(
         ]
         for additional_profile in additional_profiles:
             conan_test_args += ["--profile", additional_profile]
-        for override in definitions.require_override:
-            conan_test_args += ["--require-override", override]
         conan_test_args += [
             "-s",
             f"build_type={ build_type }",
