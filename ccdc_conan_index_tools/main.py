@@ -1,3 +1,4 @@
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 import asyncclick as click
@@ -5,6 +6,7 @@ from ccdc_conan_index_tools.commands.info import info
 from ccdc_conan_index_tools.commands.build import build
 from ccdc_conan_index_tools.commands.publish import publish
 from ccdc_conan_index_tools.package_index import PackageIndex
+from ccdc_conan_index_tools.conan_commands import ConanCommandException
 
 # if 'CCDC_USERNAME' in os.environ:
 #     artifactory_user = os.environ['CCDC_USERNAME']
@@ -59,7 +61,11 @@ cli.add_command(publish)
 
 
 def main():
-    cli()
+    try:
+        cli()
+    except ConanCommandException as e:
+        print(f"{e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
