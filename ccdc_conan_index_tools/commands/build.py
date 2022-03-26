@@ -1,6 +1,6 @@
-import click
+import asyncclick as click
 from ccdc_conan_index_tools.conan_commands import build_all_locally
-
+from ccdc_conan_index_tools.async_support import async_command
 
 @click.command()
 @click.option("--build-type")
@@ -8,7 +8,8 @@ from ccdc_conan_index_tools.conan_commands import build_all_locally
 @click.argument("package-name", required=True)
 @click.argument("package-version", required=False)
 @click.pass_context
-def build(ctx, build_type, platform_combination, package_name, package_version):
+@async_command
+async def build(ctx, build_type, platform_combination, package_name, package_version):
     index = ctx.obj.index
 
     definitions = index.definitions_for(package_name)
@@ -43,7 +44,7 @@ def build(ctx, build_type, platform_combination, package_name, package_version):
             )
     else:
         platform_combinations = definitions.package_platform_combinations
-    build_all_locally(
+    await build_all_locally(
         definitions=definitions,
         versions=versions,
         build_types=build_types,

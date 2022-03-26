@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-import click
+import asyncclick as click
 from ccdc_conan_index_tools.commands.info import info
 from ccdc_conan_index_tools.commands.build import build
 from ccdc_conan_index_tools.commands.publish import publish
@@ -57,5 +57,10 @@ cli.add_command(info)
 cli.add_command(build)
 cli.add_command(publish)
 
-if __name__ == "__main__":
+
+def main():
     cli()
+
+
+if __name__ == "__main__":
+    main()

@@ -1,6 +1,7 @@
 import pathlib
 import tempfile
-from click.testing import CliRunner
+import pytest
+from asyncclick.testing import CliRunner
 from ccdc_conan_index_tools.commands.publish import publish, package, recipe
 from ccdc_conan_index_tools.main import CliContext
 from ccdc_conan_index_tools.package_index import PackageIndex
@@ -10,16 +11,18 @@ test_path = pathlib.Path(__file__).parent.absolute()
 index_for_recipe_publication = PackageIndex(test_path / "index_for_recipe_publication")
 
 
-def test_cli_publish():
+@pytest.mark.asyncio
+async def test_cli_publish():
     runner = CliRunner()
-    result = runner.invoke(publish, [])
+    result = await runner.invoke(publish, [])
     assert result.exit_code == 0
 
 
-def test_cli_publish_local_recipe_local():
+@pytest.mark.asyncio
+async def test_cli_publish_local_recipe_local():
     runner = CliRunner()
     with tempfile.TemporaryDirectory(prefix="cit") as ch:
-        result = runner.invoke(
+        result = await runner.invoke(
             recipe,
             ["local-recipe"],
             obj=CliContext(
@@ -29,17 +32,18 @@ def test_cli_publish_local_recipe_local():
             ),
         )
         assert result.exit_code == 0
-        assert result.output == "Publishing local recipe local-recipe/1.75.0@\n"
-        search_output = get_conan_output(["search"], conan_user_home=ch)
+        assert "Publishing local recipe local-recipe/1.75.0@" in result.output
+        search_output = await get_conan_output(["search"], conan_user_home=ch)
         print(search_output)
         assert "local-recipe" in search_output
         assert "7zip/19.00" not in search_output
 
 
-def test_cli_publish_remote_recipe():
+@pytest.mark.asyncio
+async def test_cli_publish_remote_recipe():
     runner = CliRunner()
     with tempfile.TemporaryDirectory(prefix="cit") as ch:
-        result = runner.invoke(
+        result = await runner.invoke(
             recipe,
             ["7zip", "19.00"],
             obj=CliContext(
@@ -49,17 +53,18 @@ def test_cli_publish_remote_recipe():
             ),
         )
         assert result.exit_code == 0
-        assert result.output == "Publishing recipe 7zip/19.00@ from conancenter\n"
-        search_output = get_conan_output(["search"], conan_user_home=ch)
+        assert "Publishing recipe 7zip/19.00@ from conancenter" in result.output
+        search_output = await get_conan_output(["search"], conan_user_home=ch)
         print(search_output)
         assert "local-recipe" not in search_output
         assert "7zip/19.00" in search_output
 
 
-def test_cli_publish_all_recipes():
+@pytest.mark.asyncio
+async def test_cli_publish_all_recipes():
     runner = CliRunner()
     with tempfile.TemporaryDirectory(prefix="cit") as ch:
-        result = runner.invoke(
+        result = await runner.invoke(
             recipe,
             [],
             obj=CliContext(
@@ -69,20 +74,19 @@ def test_cli_publish_all_recipes():
             ),
         )
         assert result.exit_code == 0
-        assert (
-            result.output
-            == "Publishing recipe 7zip/19.00@ from conancenter\nPublishing local recipe local-recipe/1.75.0@\n"
-        )
-        search_output = get_conan_output(["search"], conan_user_home=ch)
+        assert "Publishing recipe 7zip/19.00@ from conancenter" in result.output
+        assert "Publishing local recipe local-recipe/1.75.0@" in result.output
+        search_output = await get_conan_output(["search"], conan_user_home=ch)
         print(search_output)
         assert "local-recipe" in search_output
         assert "7zip/19.00" in search_output
 
 
-def test_cli_publish_local_recipe_remote_repo():
+@pytest.mark.asyncio
+async def test_cli_publish_local_recipe_remote_repo():
     runner = CliRunner()
     with tempfile.TemporaryDirectory(prefix="cit") as ch:
-        result = runner.invoke(
+        result = await runner.invoke(
             recipe,
             ["local-recipe", "--destination-repository", "pr-repo-something"],
             obj=CliContext(

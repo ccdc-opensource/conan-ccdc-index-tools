@@ -1,8 +1,11 @@
-import subprocess
 import shutil
 import os
-from .build_definition import PackageBuildDefinitions, PlatformCombination
-from click import echo
+from ccdc_conan_index_tools.build_definition import (
+    PackageBuildDefinitions,
+    PlatformCombination,
+)
+from ccdc_conan_index_tools.async_support import run_external_command
+
 
 class ConanCommandException(Exception):
     def __init__(self, *args: object) -> None:
@@ -13,7 +16,7 @@ def conan_command():
     return shutil.which("conan")
 
 
-def get_conan_output(
+async def run_conan(
     command_args,
     conan_user_home=None,
     conan_logging_level=None,
@@ -21,12 +24,15 @@ def get_conan_output(
     force_single_cpu_core=False,
     conan_username=None,
     conan_password=None,
+    log_to_console=True,
 ):
     env = dict(os.environ)
-    env.update({
-        "NO_COLOR": "1",
-        "CONAN_NON_INTERACTIVE": "1",
-    })
+    env.update(
+        {
+            "NO_COLOR": "1",
+            "CONAN_NON_INTERACTIVE": "1",
+        }
+    )
     if conan_user_home:
         env["CONAN_USER_HOME"] = conan_user_home
     if conan_logging_level:
@@ -40,24 +46,41 @@ def get_conan_output(
     if conan_password:
         env["CONAN_PASSWORD"] = conan_password
 
-    ret = subprocess.run(
-        args=[conan_command()] + command_args,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        universal_newlines=True,
-        env=env,
+    (returncode, output) = await run_external_command(
+        [conan_command()] + command_args, log_to_console=log_to_console, env=env
     )
-    if ret.returncode != 0:
+    if returncode != 0:
         raise ConanCommandException(
-            f"Conan command {conan_command()} [{command_args}] returned {ret.returncode}\nStdout: {ret.stdout}\nStderr: {ret.stderr}"
+            f"Conan command {conan_command()} [{command_args}] returned {returncode}"
         )
-    return ret.stdout
+    return output
 
 
-def get_remote_package_licence(
+async def get_conan_output(
+    command_args,
+    conan_user_home=None,
+    conan_logging_level=None,
+    macos_deployment_target=None,
+    force_single_cpu_core=False,
+    conan_username=None,
+    conan_password=None,
+):
+    return await run_conan(
+        command_args=command_args,
+        conan_user_home=conan_user_home,
+        conan_logging_level=conan_logging_level,
+        macos_deployment_target=macos_deployment_target,
+        force_single_cpu_core=force_single_cpu_core,
+        conan_username=conan_username,
+        conan_password=conan_password,
+        log_to_console=False,
+    )
+
+
+async def get_remote_package_licence(
     package, version, remote, conan_user_home=None, conan_logging_level=None
 ):
-    ret = get_conan_output(
+    ret = await get_conan_output(
         ["inspect", "-r", remote, "-a", "license", f"{package}/{version}@"],
         conan_user_home=conan_user_home,
         conan_logging_level=conan_logging_level,
@@ -68,12 +91,12 @@ def get_remote_package_licence(
     return lines[0].replace("license: ", "")
 
 
-def get_local_package_licence(
+async def get_local_package_licence(
     conanfile_directory,
     conan_user_home=None,
     conan_logging_level=None,
 ):
-    ret = get_conan_output(
+    ret = await get_conan_output(
         ["inspect", "-a", "license", conanfile_directory],
         conan_user_home=conan_user_home,
         conan_logging_level=conan_logging_level,
@@ -84,7 +107,7 @@ def get_local_package_licence(
     return lines[0].replace("license: ", "")
 
 
-def publish_local_recipe(
+async def publish_local_recipe(
     conanfile_directory,
     package_name,
     package_version,
@@ -92,14 +115,13 @@ def publish_local_recipe(
     conan_user_home=None,
     conan_logging_level=None,
 ):
-    output = get_conan_output(
+    await run_conan(
         ["export", conanfile_directory, f"{package_name}/{package_version}@"],
         conan_user_home=conan_user_home,
         conan_logging_level=conan_logging_level,
     )
     if destination_repository:
-        output += "\n"
-        output += get_conan_output(
+        await run_conan(
             [
                 "upload",
                 f"{package_name}/{package_version}@",
@@ -111,7 +133,7 @@ def publish_local_recipe(
         )
 
 
-def publish_remote_recipe(
+async def publish_remote_recipe(
     package_name,
     package_version,
     source_repository,
@@ -119,7 +141,7 @@ def publish_remote_recipe(
     conan_user_home=None,
     conan_logging_level=None,
 ):
-    output = get_conan_output(
+    await run_conan(
         [
             "download",
             f"{package_name}/{package_version}@",
@@ -130,8 +152,7 @@ def publish_remote_recipe(
         conan_logging_level=conan_logging_level,
     )
     if destination_repository:
-        output += "\n"
-        output += get_conan_output(
+        await run_conan(
             [
                 "upload",
                 f"{package_name}/{package_version}@",
@@ -143,7 +164,7 @@ def publish_remote_recipe(
         )
 
 
-def build_all_locally(
+async def build_all_locally(
     definitions: PackageBuildDefinitions,
     versions: list,
     build_types: list,
@@ -155,31 +176,47 @@ def build_all_locally(
             if platform_combination.uses_yum and definitions.centos_yum_preinstall:
                 all_yum = " ".join(definitions.centos_yum_preinstall)
                 print(f"Installing {all_yum} with yum")
-                subprocess.check_call(
-                    ["sudo", "yum", "install", "-y"] + definitions.centos_yum_preinstall
+                (returncode, output) = await run_external_command(
+                    ["sudo", "yum", "install", "-y"]
+                    + definitions.centos_yum_preinstall,
+                    log_to_console=True,
                 )
+                if returncode != 0:
+                    raise Exception(
+                        f"sudo yum install -y {all_yum} returned {returncode}"
+                    )
 
             if platform_combination.uses_brew:
                 if definitions.macos_brew_preinstall:
                     all_brew = " ".join(definitions.macos_brew_preinstall)
                     print(f"Installing {all_brew} with brew")
-                    subprocess.check_call(
-                        ["brew", "install"] + definitions.macos_brew_preinstall
+                    (returncode, output) = await run_external_command(
+                        ["brew", "install"] + definitions.macos_brew_preinstall,
+                        log_to_console=True,
                     )
+                    if returncode != 0:
+                        raise Exception(
+                            f"brew install {all_brew} returned {returncode}"
+                        )
                 if platform_combination.macos_xcode_version:
                     print(
                         f"sudo xcode-select -s /Applications/Xcode_{ platform_combination.macos_xcode_version }.app/Contents/Developer"
                     )
-                    subprocess.check_call(
+                    (returncode, output) = await run_external_command(
                         [
                             "sudo",
                             "xcode-select",
                             "-s",
                             f"/Applications/Xcode_{ platform_combination.macos_xcode_version }.app/Contents/Developer",
-                        ]
+                        ],
+                        log_to_console=True,
                     )
+                    if returncode != 0:
+                        raise Exception(
+                            f"sudo xcode-select -s /Applications/Xcode_{ platform_combination.macos_xcode_version }.app/Contents/Developer returned {returncode}"
+                        )
             for build_type in build_types:
-                build_locally(
+                await build_locally(
                     definitions=definitions,
                     version=version,
                     build_type=build_type,
@@ -187,7 +224,7 @@ def build_all_locally(
                 )
 
 
-def build_locally(
+async def build_locally(
     definitions: PackageBuildDefinitions,
     version: str,
     build_type: str,
@@ -228,8 +265,10 @@ def build_locally(
     for override in definitions.require_override:
         conan_install_args += ["--require-override", override]
 
-    echo(f"Installing {definitions.name}/{version}@ in configuration {build_type}, combination {combination.name}")
-    get_conan_output(
+    print(
+        f"Installing {definitions.name}/{version}@ in configuration {build_type}, combination {combination.name}"
+    )
+    await run_conan(
         conan_install_args,
         conan_user_home=None,
         conan_logging_level=None,
@@ -238,7 +277,9 @@ def build_locally(
     )
 
     if definitions.local_recipe:
-        echo(f"Testing {definitions.name}/{version}@ in configuration {build_type}, combination {combination.name}")
+        print(
+            f"Testing {definitions.name}/{version}@ in configuration {build_type}, combination {combination.name}"
+        )
         conan_test_args = [
             "test",
             f"{definitions.recipe_path_for_version(version)}/test_package",
@@ -256,7 +297,7 @@ def build_locally(
             "-s",
             f"build_type={ build_type }",
         ]
-        get_conan_output(
+        await run_conan(
             conan_test_args,
             conan_user_home=None,
             conan_logging_level=None,
