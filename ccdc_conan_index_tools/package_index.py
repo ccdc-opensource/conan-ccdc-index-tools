@@ -1,5 +1,7 @@
 import os
 import sys
+import yaml
+
 from typing import Dict, List
 from .build_definition import PackageBuildDefinitions
 
@@ -26,6 +28,10 @@ class PackageIndex:
     @property
     def defaults_file(self):
         return os.path.join(self._index_dir, "index-defaults.yml")
+
+    @property
+    def sequence_file(self):
+        return os.path.join(self._index_dir, "sequence.yml")
 
     @property
     def recipes_directory(self):
@@ -62,3 +68,11 @@ class PackageIndex:
                 self.defaults_file, os.path.join(self.recipes_directory, pkg)
             )
         return None
+
+    @property
+    def build_sequence(self) -> List:
+        if not os.path.exists(self.sequence_file):
+            return []
+        with open(self.sequence_file, "r") as f:
+            r = yaml.safe_load(f)
+        return r["build_sequence"]
