@@ -1,5 +1,5 @@
 import os
-import click
+import sys
 from typing import Dict, List
 from .build_definition import PackageBuildDefinitions
 
@@ -55,7 +55,7 @@ class PackageIndex:
                     self.defaults_file, self.recipes_directory, f"{pkg}.yml"
                 )
             except Exception as e:
-                click.echo(e, err=True)
+                print(e, file=sys.stderr)
                 raise Exception(f"Cannot read package definition in {yml_file}")
         if os.path.isfile(local_config_yml_file):
             return PackageBuildDefinitions.from_local_recipe_directory(

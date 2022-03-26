@@ -23,7 +23,7 @@ def recipe(ctx, destination_repository, package_name, package_version):
         versions = [package_version] if package_version else definitions.versions
         for version in versions:
             if definitions.local_recipe:
-                click.echo(f"Publishing local recipe {package_name}/{version}@")
+                print(f"Publishing local recipe {package_name}/{version}@")
                 publish_local_recipe(
                     definitions.recipe_path_for_version(version),
                     package_name,
@@ -33,7 +33,7 @@ def recipe(ctx, destination_repository, package_name, package_version):
                     conan_user_home=ctx.obj.conan_user_home,
                 )
             else:
-                click.echo(
+                print(
                     f"Publishing recipe {package_name}/{version}@ from {definitions.source_repository}"
                 )
                 publish_remote_recipe(

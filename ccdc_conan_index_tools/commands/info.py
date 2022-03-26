@@ -21,9 +21,9 @@ def package(ctx, format):
     index = ctx.obj.index
     packages = index.package_names
     if format == "yaml":
-        click.echo(yaml.dump(packages))
+        print(yaml.dump(packages))
     elif format == "json":
-        click.echo(json.dumps(packages))
+        print(json.dumps(packages))
 
 
 @info.command()
@@ -69,6 +69,6 @@ def licence(ctx, format, package_name):
                 licences[f"{package}/{version}"] = licence
 
     if format == "yaml":
-        click.echo(yaml.dump(licences))
+        print(yaml.dump(licences))
     elif format == "json":
-        click.echo(json.dumps(licences))
+        print(json.dumps(licences))
