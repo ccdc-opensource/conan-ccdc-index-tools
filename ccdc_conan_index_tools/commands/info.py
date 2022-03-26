@@ -2,7 +2,7 @@ import asyncclick as click
 import yaml
 import json
 import sys
-from ccdc_conan_index_tools.async_support import async_command
+
 
 @click.group()
 def info():
@@ -49,7 +49,7 @@ async def licence(ctx, format, package_name):
         package_names = [package_name]
     if format == "json":
         sys.stdout.write("{")
-    first=True
+    first = True
     for package in package_names:
         definitions = index.definitions_for(package)
         if definitions.local_recipe:
@@ -64,7 +64,7 @@ async def licence(ctx, format, package_name):
                 elif format == "json":
                     if not first:
                         sys.stdout.write(", ")
-                    sys.stdout.write(f"\"{package}/{version}\": {json.dumps(licence)}")
+                    sys.stdout.write(f'"{package}/{version}": {json.dumps(licence)}')
         else:
             for version in definitions.versions:
                 licence = await get_remote_package_licence(
@@ -79,8 +79,8 @@ async def licence(ctx, format, package_name):
                 elif format == "json":
                     if not first:
                         sys.stdout.write(", ")
-                    sys.stdout.write(f"\"{package}/{version}\": {json.dumps(licence)}")
-        first=False
+                    sys.stdout.write(f'"{package}/{version}": {json.dumps(licence)}')
+        first = False
         if format == "json":
             sys.stdout.flush()
     if format == "json":

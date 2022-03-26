@@ -4,19 +4,6 @@ import io
 from functools import wraps
 
 
-def async_command(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if asyncio.get_event_loop().is_running():
-            loop = asyncio.new_event_loop()
-            # future = loop.create_task()
-            return loop.run_until_complete(f(*args, **kwargs))
-            # return asyncio.ensure_future(future)
-        else:
-            return asyncio.run(f(*args, **kwargs))
-    return wrapper
-
-
 async def run_external_command(
     args,
     cwd=None,
