@@ -54,5 +54,5 @@ async def run_external_command(
         _read_stdout(process.stdout, output),
         _read_stderr(process.stderr, output),
     )
-    await process.wait()
+    await asyncio.wait([process.wait()])
     return process.returncode, output.getvalue()
