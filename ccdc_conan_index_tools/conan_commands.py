@@ -3,8 +3,10 @@ import os
 from ccdc_conan_index_tools.build_definition import (
     PackageBuildDefinitions,
     PlatformCombination,
+    BuildAlternative,
 )
 from ccdc_conan_index_tools.async_support import run_external_command
+from ccdc_conan_index_tools.logging import log_section
 
 
 class ConanCommandException(Exception):
@@ -169,8 +171,9 @@ async def build_all_locally(
     versions: list,
     build_types: list,
     platform_combinations: list,
+    build_alternatives: list,
 ):
-    for version in versions:
+    with log_section(f"Build of {definitions.name}: required system packages"):
         for platform_combination in platform_combinations:
             # Pre-add any required packages
             if platform_combination.uses_yum and definitions.centos_yum_preinstall:
@@ -215,13 +218,20 @@ async def build_all_locally(
                         raise Exception(
                             f"sudo xcode-select -s /Applications/Xcode_{ platform_combination.macos_xcode_version }.app/Contents/Developer returned {returncode}"
                         )
-            for build_type in build_types:
-                await build_locally(
-                    definitions=definitions,
-                    version=version,
-                    build_type=build_type,
-                    combination=platform_combination,
-                )
+
+    for build_alternative in build_alternatives:
+        with log_section(
+            f"Build of {definitions.name}: alternative {build_alternative.name}"
+        ):
+            for version in versions:
+                for build_type in build_types:
+                    await build_locally(
+                        definitions=definitions,
+                        version=version,
+                        build_type=build_type,
+                        combination=platform_combination,
+                        build_alternative=build_alternative,
+                    )
 
 
 async def build_locally(
@@ -229,6 +239,7 @@ async def build_locally(
     version: str,
     build_type: str,
     combination: PlatformCombination,
+    build_alternative: BuildAlternative,
 ):
     build_profile = combination.build_profile
     if build_type == "Debug":
@@ -249,6 +260,7 @@ async def build_locally(
     additional_profiles.extend(
         definitions.additional_profiles_for_all_platform_combinations
     )
+    additional_profiles.extend(build_alternative.additional_target_profiles)
     if definitions.use_release_zlib_profile:
         if "msvc16" in target_profile:
             additional_profiles.append("windows-msvc16-release-zlib")

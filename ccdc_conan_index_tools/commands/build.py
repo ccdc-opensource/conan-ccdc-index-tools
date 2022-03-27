@@ -14,6 +14,15 @@ from ccdc_conan_index_tools.logging import log_section
     default=False,
     help="Default is to not require a platform combination",
 )
+@click.option(
+    "--build-alternative",
+    envvar="LCI_BUILD_ALTERNATIVE",
+)
+@click.option(
+    "--require-build-alternative/--no-require-build-alternative",
+    default=False,
+    help="Default is to not require a build alternative",
+)
 @click.option("--from-package", help="Build from a certain package in sequence")
 @click.argument("package-name", required=False)
 @click.argument("package-version", required=False)
@@ -23,6 +32,8 @@ async def build(
     build_type,
     platform_combination,
     require_combination,
+    build_alternative,
+    require_build_alternative,
     from_package,
     package_name,
     package_version,
@@ -72,9 +83,22 @@ async def build(
                     )
             else:
                 platform_combinations = definitions.package_platform_combinations
+            if build_alternative:
+                build_alternatives = [
+                    ba
+                    for ba in definitions.package_build_alternatives
+                    if ba.name == build_alternative
+                ]
+                if require_build_alternative and not build_alternatives:
+                    raise click.UsageError(
+                        f"Cannot find any valid build alternative for {package_name} in {index.directory}"
+                    )
+            else:
+                build_alternatives = definitions.package_build_alternatives
             await build_all_locally(
                 definitions=definitions,
                 versions=versions,
                 build_types=build_types,
                 platform_combinations=platform_combinations,
+                build_alternatives=build_alternatives,
             )

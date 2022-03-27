@@ -60,6 +60,28 @@ class PlatformCombination:
         return self._macos_deployment_target
 
 
+class BuildAlternative:
+    def __init__(self, yaml_dict: dict):
+        self._name = yaml_dict["name"]
+        self._additional_target_profiles = yaml_dict.get(
+            "additional_target_profiles", []
+        )
+
+    def __eq__(self, other):
+        return (
+            self._name == other._name
+            and self._additional_target_profiles == other._additional_target_profiles
+        )
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def additional_target_profiles(self):
+        return self._additional_target_profiles
+
+
 class PackageBuildDefinitions:
     def __init__(
         self,
@@ -79,6 +101,7 @@ class PackageBuildDefinitions:
         default_platform_combinations: List,
         package_platform_combinations: List,
         limit_to_platform_combinations: List,
+        package_build_alternatives: List,
         needs_artifactory_api_key: bool,
         local_recipe_paths_by_version: Dict,
         split_by_build_type: bool,
@@ -105,6 +128,7 @@ class PackageBuildDefinitions:
         self._default_platform_combinations = default_platform_combinations
         self._package_platform_combinations = package_platform_combinations
         self._limit_to_platform_combinations = limit_to_platform_combinations
+        self._package_build_alternatives = package_build_alternatives
         self._needs_artifactory_api_key = needs_artifactory_api_key
         self._local_recipe_paths_by_version = local_recipe_paths_by_version
         self._split_by_build_type = split_by_build_type
@@ -195,6 +219,10 @@ class PackageBuildDefinitions:
             return self.all_package_platform_combinations
 
     @property
+    def package_build_alternatives(self):
+        return self._package_build_alternatives
+
+    @property
     def conan_config_git_source(self):
         return self._conan_config_git_source
 
@@ -257,6 +285,12 @@ class PackageBuildDefinitions:
             PlatformCombination(c)
             for c in _read_default_and_override("platform_combinations")
         ]
+
+        package_build_alternatives = [
+            BuildAlternative(v)
+            for v in _read_default_and_override("package_build_alternatives")
+        ]
+
         limit_to_platform_combinations = _listify(
             _read_default_and_override("limit_to_platform_combinations")
         )
@@ -284,6 +318,7 @@ class PackageBuildDefinitions:
             default_platform_combinations=default_platform_combinations,
             package_platform_combinations=package_platform_combinations,
             limit_to_platform_combinations=limit_to_platform_combinations,
+            package_build_alternatives=package_build_alternatives,
             needs_artifactory_api_key=needs_artifactory_api_key,
             local_recipe_paths_by_version=None,
             split_by_build_type=split_by_build_type,
@@ -339,6 +374,12 @@ class PackageBuildDefinitions:
         limit_to_platform_combinations = _listify(
             _read_default_and_override("limit_to_platform_combinations")
         )
+
+        package_build_alternatives = [
+            BuildAlternative(v)
+            for v in _read_default_and_override("package_build_alternatives")
+        ]
+
         needs_artifactory_api_key = _read_default_and_override(
             "needs_artifactory_api_key"
         )
@@ -368,6 +409,7 @@ class PackageBuildDefinitions:
             default_platform_combinations=default_platform_combinations,
             package_platform_combinations=package_platform_combinations,
             limit_to_platform_combinations=limit_to_platform_combinations,
+            package_build_alternatives=package_build_alternatives,
             needs_artifactory_api_key=needs_artifactory_api_key,
             local_recipe_paths_by_version=local_recipe_paths_by_version,
             split_by_build_type=split_by_build_type,

@@ -76,6 +76,9 @@ Valid values are "critical", "error", "warning", "warn", "info", "debug"
 
 Useful when making profile changes, an alternative to creating a branch in the configuration repository and pointing at it via alternative branches
 
+### When a subset of packages must be built in a completely different way to build a specific package
+
+`cit build --build-alternative for-povray`
 
 ### Publish recipes for all versions of foo
 
