@@ -223,15 +223,16 @@ async def build_all_locally(
         with log_section(
             f"Build of {definitions.name}: alternative {build_alternative.name}"
         ):
-            for version in versions:
-                for build_type in build_types:
-                    await build_locally(
-                        definitions=definitions,
-                        version=version,
-                        build_type=build_type,
-                        combination=platform_combination,
-                        build_alternative=build_alternative,
-                    )
+            for platform_combination in platform_combinations:
+                for version in versions:
+                    for build_type in build_types:
+                        await build_locally(
+                            definitions=definitions,
+                            version=version,
+                            build_type=build_type,
+                            combination=platform_combination,
+                            build_alternative=build_alternative,
+                        )
 
 
 async def build_locally(
