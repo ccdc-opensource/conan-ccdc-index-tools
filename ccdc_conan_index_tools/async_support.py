@@ -30,6 +30,7 @@ async def run_external_command(
             buf = buf.decode(errors="replace")
             if log_to_console:
                 sys.stderr.write(buf)
+                sys.stderr.flush()
             if log_file:
                 log_file.write(buf)
             if return_stderr:
@@ -44,6 +45,7 @@ async def run_external_command(
             buf = buf.decode(errors="replace")
             if log_to_console:
                 sys.stdout.write(buf)
+                sys.stdout.flush()
             if log_file:
                 log_file.write(buf)
             if return_stdout:
