@@ -1,4 +1,7 @@
 import os
+import sys
+import yaml
+
 from typing import Dict, List
 from .build_definition import PackageBuildDefinitions
 
@@ -7,6 +10,8 @@ class PackageIndex:
     def __init__(self, index_dir):
         self._index_dir = index_dir
         self._names = None
+        if not os.path.isdir(self.recipes_directory):
+            raise FileNotFoundError(f"Missing {self.recipes_directory}")
 
     @property
     def is_valid(self):
@@ -23,6 +28,10 @@ class PackageIndex:
     @property
     def defaults_file(self):
         return os.path.join(self._index_dir, "index-defaults.yml")
+
+    @property
+    def sequence_file(self):
+        return os.path.join(self._index_dir, "sequence.yml")
 
     @property
     def recipes_directory(self):
@@ -47,11 +56,23 @@ class PackageIndex:
         yml_file = os.path.join(self.recipes_directory, f"{pkg}.yml")
         local_config_yml_file = os.path.join(self.recipes_directory, pkg, "config.yml")
         if os.path.isfile(yml_file):
-            return PackageBuildDefinitions.from_yaml(
-                self.defaults_file, self.recipes_directory, f"{pkg}.yml"
-            )
+            try:
+                return PackageBuildDefinitions.from_yaml(
+                    self.defaults_file, self.recipes_directory, f"{pkg}.yml"
+                )
+            except Exception as e:
+                print(e, file=sys.stderr)
+                raise Exception(f"Cannot read package definition in {yml_file}")
         if os.path.isfile(local_config_yml_file):
             return PackageBuildDefinitions.from_local_recipe_directory(
                 self.defaults_file, os.path.join(self.recipes_directory, pkg)
             )
         return None
+
+    @property
+    def build_sequence(self) -> List:
+        if not os.path.exists(self.sequence_file):
+            return []
+        with open(self.sequence_file, "r") as f:
+            r = yaml.safe_load(f)
+        return r["build_sequence"]

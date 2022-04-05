@@ -15,12 +15,20 @@ class PlatformCombination:
         self._name = yaml_dict["name"]
         self._build_profile = yaml_dict["build_profile"]
         self._target_profile = yaml_dict["target_profile"]
+        self._uses_yum = yaml_dict.get("uses_yum", False)
+        self._uses_brew = yaml_dict.get("uses_brew", False)
+        self._macos_xcode_version = yaml_dict.get("macos_xcode_version")
+        self._macos_deployment_target = yaml_dict.get("macos_deployment_target")
 
     def __eq__(self, other):
         return (
             self._name == other._name
             and self._build_profile == other._build_profile
             and self._target_profile == other._target_profile
+            and self._uses_yum == other._uses_yum
+            and self._uses_brew == other._uses_brew
+            and self._macos_xcode_version == other._macos_xcode_version
+            and self._macos_deployment_target == other._macos_deployment_target
         )
 
     @property
@@ -34,6 +42,44 @@ class PlatformCombination:
     @property
     def target_profile(self):
         return self._target_profile
+
+    @property
+    def uses_yum(self):
+        return self._uses_yum
+
+    @property
+    def uses_brew(self):
+        return self._uses_brew
+
+    @property
+    def macos_xcode_version(self):
+        return self._macos_xcode_version
+
+    @property
+    def macos_deployment_target(self):
+        return self._macos_deployment_target
+
+
+class BuildAlternative:
+    def __init__(self, yaml_dict: dict):
+        self._name = yaml_dict["name"]
+        self._additional_target_profiles = yaml_dict.get(
+            "additional_target_profiles", []
+        )
+
+    def __eq__(self, other):
+        return (
+            self._name == other._name
+            and self._additional_target_profiles == other._additional_target_profiles
+        )
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def additional_target_profiles(self):
+        return self._additional_target_profiles
 
 
 class PackageBuildDefinitions:
@@ -55,6 +101,7 @@ class PackageBuildDefinitions:
         default_platform_combinations: List,
         package_platform_combinations: List,
         limit_to_platform_combinations: List,
+        package_build_alternatives: List,
         needs_artifactory_api_key: bool,
         local_recipe_paths_by_version: Dict,
         split_by_build_type: bool,
@@ -81,6 +128,7 @@ class PackageBuildDefinitions:
         self._default_platform_combinations = default_platform_combinations
         self._package_platform_combinations = package_platform_combinations
         self._limit_to_platform_combinations = limit_to_platform_combinations
+        self._package_build_alternatives = package_build_alternatives
         self._needs_artifactory_api_key = needs_artifactory_api_key
         self._local_recipe_paths_by_version = local_recipe_paths_by_version
         self._split_by_build_type = split_by_build_type
@@ -171,12 +219,22 @@ class PackageBuildDefinitions:
             return self.all_package_platform_combinations
 
     @property
+    def package_build_alternatives(self):
+        return self._package_build_alternatives
+
+    @property
     def conan_config_git_source(self):
         return self._conan_config_git_source
 
     @property
     def conan_config_git_branch(self):
         return self._conan_config_git_branch
+
+    def platform_combination_by_name(self, name):
+        for c in self.all_package_platform_combinations:
+            if c.name == name:
+                return c
+        return None
 
     def recipe_path_for_version(self, v):
         if not self._local_recipe:
@@ -227,6 +285,12 @@ class PackageBuildDefinitions:
             PlatformCombination(c)
             for c in _read_default_and_override("platform_combinations")
         ]
+
+        package_build_alternatives = [
+            BuildAlternative(v)
+            for v in _read_default_and_override("package_build_alternatives")
+        ]
+
         limit_to_platform_combinations = _listify(
             _read_default_and_override("limit_to_platform_combinations")
         )
@@ -236,7 +300,6 @@ class PackageBuildDefinitions:
         split_by_build_type = _read_default_and_override("split_by_build_type")
         conan_config_git_source = _read_default_and_override("conan_config_git_source")
         conan_config_git_branch = _read_default_and_override("conan_config_git_branch")
-
 
         recipe = PackageBuildDefinitions(
             name=name,
@@ -255,6 +318,7 @@ class PackageBuildDefinitions:
             default_platform_combinations=default_platform_combinations,
             package_platform_combinations=package_platform_combinations,
             limit_to_platform_combinations=limit_to_platform_combinations,
+            package_build_alternatives=package_build_alternatives,
             needs_artifactory_api_key=needs_artifactory_api_key,
             local_recipe_paths_by_version=None,
             split_by_build_type=split_by_build_type,
@@ -272,7 +336,7 @@ class PackageBuildDefinitions:
 
         with open(os.path.join(recipe_defaults), "r") as f:
             d = yaml.safe_load(f)
-        with open(os.path.join(recipe_directory, config_yaml_file), "r") as f:
+        with open(config_yaml_file, "r") as f:
             r = yaml.safe_load(f)
 
         def _read_default_and_override(field, default=None):
@@ -310,6 +374,12 @@ class PackageBuildDefinitions:
         limit_to_platform_combinations = _listify(
             _read_default_and_override("limit_to_platform_combinations")
         )
+
+        package_build_alternatives = [
+            BuildAlternative(v)
+            for v in _read_default_and_override("package_build_alternatives")
+        ]
+
         needs_artifactory_api_key = _read_default_and_override(
             "needs_artifactory_api_key"
         )
@@ -339,6 +409,7 @@ class PackageBuildDefinitions:
             default_platform_combinations=default_platform_combinations,
             package_platform_combinations=package_platform_combinations,
             limit_to_platform_combinations=limit_to_platform_combinations,
+            package_build_alternatives=package_build_alternatives,
             needs_artifactory_api_key=needs_artifactory_api_key,
             local_recipe_paths_by_version=local_recipe_paths_by_version,
             split_by_build_type=split_by_build_type,

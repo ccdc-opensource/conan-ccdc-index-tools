@@ -6,53 +6,32 @@ Python tools and scripts for dealing with conan-ccdc-index
 
 Create a venv then, in the venv
 
-```
+```shell
 python -m pip install -U pip setuptools
 python -m pip install -e .
-python -m pip install -e '.[testing]'
 ```
 
-## Ideas for the command line
+This will make the cit command available in the current virtualenv
+
+Additionally running `python -m pip install -e '.[testing]'` will add some development packages.
+
+Some command line arguments understood by the tools are documented below.
 
 ### List all package names
 
-`cit list packages`
+`cit info package`
 
 Returns a list of package names
 
 ### List all package licences
 
-`cit list licences`
+`cit info licence`
 
 Returns a dictionary of package names and relative licence obtained from the conanfile.py
 
+### Get licence of a specific package
 
-### Build a single version of package foo in a single platform configuration and type
-
-`cit build --build-type Release --platform-configuration native-centos7-gcc10-x86_64 foo 1.2.3`
-
-Uses a published recipe (see cit publish recipe examples below)
-
-### Build all versions of package foo in a single platform configuration and type
-
-`cit build --build-type Release --platform-configuration native-centos7-gcc10-x86_64 foo`
-
-
-### Build all versions of foo in a single platform configuration in all specified types (Release, Debug etc)
-
-`cit build --build-type Release --platform-configuration native-centos7-gcc10-x86_64 foo`
-
-### Increase logging level
-
-`cit build --build-type Release --platform-configuration native-centos7-gcc10-x86_64 --conan-logging-level debug foo`
-
-Valid values are "critical", "error", "warning", "warn", "info", "debug"
-
-### Use local directory for configuration install
-
-`cit build --build-type Release --platform-configuration native-centos7-gcc10-x86_64 --configuration-local-directory ../conan-ccdc-common-configuration foo`
-
-Useful when making profile changes, an alternative to creating a branch in the configuration repository and pointing at it via alternative branches
+`cit info licence foo`
 
 ### Publish recipes for all versions of foo in the local conan home
 
@@ -60,15 +39,56 @@ Useful when making profile changes, an alternative to creating a branch in the c
 
 Unlike the version using --destination-repository, this merely publishes the recipes locally
 
+### Publish recipes for all versions of all known packages in the local conan home
+
+`cit publish recipe`
+
+Unlike the version using --destination-repository, this merely publishes the recipes locally
+
+## Ideas for the command line
+
+Note: These are not implemented yet!
+
+### Build a single version of package foo in a single platform combination and type
+
+`cit build --build-type Release --platform-combination native-centos7-gcc10-x86_64 foo 1.2.3`
+
+Uses a published recipe (see cit publish recipe examples below)
+
+### Build all versions of package foo in a single platform combination and type
+
+`cit build --build-type Release --platform-combination native-centos7-gcc10-x86_64 foo`
+
+
+### Build all versions of foo in a single platform combination in all specified types (Release, Debug etc)
+
+`cit build --platform-combination native-centos7-gcc10-x86_64 foo`
+
+### Increase logging level
+
+`cit --conan-logging-level debug build --build-type Release --platform-combination native-centos7-gcc10-x86_64 foo`
+
+Valid values are "critical", "error", "warning", "warn", "info", "debug"
+
+### Use local directory for combination install
+
+`cit build --build-type Release --platform-combination native-centos7-gcc10-x86_64 --configuration-local-directory ../conan-ccdc-common-configuration foo`
+
+Useful when making profile changes, an alternative to creating a branch in the configuration repository and pointing at it via alternative branches
+
+### When a subset of packages must be built in a completely different way to build a specific package
+
+`cit build --build-alternative for-povray`
+
 ### Publish recipes for all versions of foo
 
-`cit publish recipe --destination-repository pr-repo-1234 foo`
+`cit publish recipe --destination-repository pr-repo-123 foo`
 
 Publishes a recipe to a remote repository
 
 ### Publish built package for a single version of foo
 
-`cit publish package --destination-repository pr-repo-1234 --build-type Release --platform-configuration native-centos7-gcc10-x86_64 foo 1.2.3`
+`cit publish package --destination-repository pr-repo-1234 --build-type Release --platform-combination native-centos7-gcc10-x86_64 foo 1.2.3`
 
 ### Publish built package for all versions of foo in the index
 
@@ -111,3 +131,48 @@ Copies created artefacts to target repository. Marks conan repository as closed
 
 Marks conan repository as closed
 
+## Running an artifactory CE C++ edition
+
+```docker run --name artifactory -d -p 8081:8081 -p 8082:8082 docker.bintray.io/jfrog/artifactory-cpp-ce:latest```
+
+on M1 mac, you must download the "Darwin installer", a tar.gz, extract it and run `arch -arch x86_64 bin/artifactory.sh` to make it work
+
+Use admin Foobar123
+## What does the PR workflow look like?
+
+```mermaid
+sequenceDiagram
+    participant Developer
+    participant Cron
+    participant conan.ccdc.index
+    participant conan.ccdc.index.ci
+    participant First GitHub Job
+    participant Multiple GitHub Jobs
+    participant temporary.artifactory.ccdc
+    participant PR Closure GitHub Job
+    participant artifactory.ccdc
+
+    Developer->>conan.ccdc.index: Create PR 123 with a change<br/>to package foo
+    conan.ccdc.index->>conan.ccdc.index.ci: use action
+    conan.ccdc.index.ci->>First GitHub Job: install conan-ccdc-index-tools
+    conan.ccdc.index.ci->>First GitHub Job: cci pr validate
+    Note right of First GitHub Job: Checks that a single recipe has been altered<br/>runs hooks on local recipes
+    conan.ccdc.index.ci->>First GitHub Job: cci pr prepare
+    First GitHub Job->>temporary.artifactory.ccdc: create temporary conan repository<br/>conan-ci-pr-123
+    First GitHub Job->>temporary.artifactory.ccdc: publish changed recipe
+    conan.ccdc.index.ci->>First GitHub Job: cci pr matrix foo
+    conan.ccdc.index.ci->>Multiple GitHub Jobs: cci pr build --matrix foo
+    Multiple GitHub Jobs->>temporary.artifactory.ccdc: Use conan-ci-pr-123<br/>(high precedence)
+    Note right of Multiple GitHub Jobs: Builds package for a<br/>single platform combination
+    Multiple GitHub Jobs->>temporary.artifactory.ccdc: Publish package in conan-ci-pr-123
+    Developer->>temporary.artifactory.ccdc: Validate manually (use contents of repo)
+    Developer->>conan.ccdc.index: Accept and merge PR 123
+    conan.ccdc.index->>conan.ccdc.index.ci: use action
+    conan.ccdc.index.ci->>PR Closure GitHub Job: install conan-ccdc-index-tools
+    conan.ccdc.index.ci->>PR Closure GitHub Job: cit pr merge foo
+    PR Closure GitHub Job-->>temporary.artifactory.ccdc: get recipe and binaries
+    PR Closure GitHub Job->>artifactory.ccdc: publish recipe and binaries
+    PR Closure GitHub Job-->>temporary.artifactory.ccdc: mark for closure
+    Cron->>temporary.artifactory.ccdc: delete conan-ci-pr-123
+    
+```

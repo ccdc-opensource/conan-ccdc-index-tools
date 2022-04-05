@@ -1,0 +1,55 @@
+---
+# Use the default conancenter for this test
+source_repository: conancenter
+
+# Header only recipes are built once in Release mode
+header_only: false
+
+# All build types
+build_types:
+  - Release
+  - Debug
+  - RelWithDebInfo
+
+# Deployment target override, setting this will set the relevant environment variables regardless of what the conan recipe says
+# macos_deployment_target:
+
+# packages that must be preinstalled and are not mentioned in the official recipes
+centos_yum_preinstall: []
+macos_brew_preinstall: []
+
+# Some packages depend on older versions of libraries, specifying an override here will cause them to build with newer versions
+# This trick doesn't work with build requirements!
+require_override: []
+
+platform_combinations:
+  - name: combi-1
+    build_profile: build-profile-1
+    target_profile: target-profile-1
+  - name: combi-2
+    build_profile: build-profile-2
+    target_profile: target-profile-2
+    macos_xcode_version: 13.2
+    macos_deployment_target: 10.15
+  - name: combi-3
+    build_profile: build-profile-3
+    target_profile: target-profile-3
+
+limit_to_platform_combinations:
+  - combi-2
+  - combi-3
+
+# conan_config_git_source:
+# conan_config_git_branch:
+
+# Sets CONAN_CPU_COUNT='1' in environment for debug builds
+# was called workaround_autotools_windows_debug_issue
+force_single_cpu_core_for_debug_builds: false
+
+additional_profiles_for_all_platform_combinations: []
+
+use_release_zlib_profile: false
+
+needs_artifactory_api_key: false
+
+split_by_build_type: false
